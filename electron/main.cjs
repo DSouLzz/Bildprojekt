@@ -1,15 +1,17 @@
-const { app, BrowserWindow, ipcMain, safeStorage, session } = require('electron');
+const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 const isDev = !app.isPackaged;
 const STORE = path.join(app.getPath('userData'), 'openai-key.bin');
-const REPO = 'DSouLzz/Bildprojekt';
 
 function readKey(){
-  try { if(!fs.existsSync(STORE)) return ''; const b=fs.readFileSync(STORE); return safeStorage.isEncryptionAvailable()?safeStorage.decryptString(b):b.toString(); }
-  catch { return ''; }
+  try {
+    if(!fs.existsSync(STORE)) return '';
+    const b=fs.readFileSync(STORE);
+    return safeStorage.isEncryptionAvailable()?safeStorage.decryptString(b):b.toString();
+  } catch { return ''; }
 }
 function writeKey(key){
   const data=safeStorage.isEncryptionAvailable()?safeStorage.encryptString(key):Buffer.from(key);
@@ -19,17 +21,28 @@ function writeKey(key){
 async function aiEdit({imageDataUrl,prompt}){
   const key=readKey();
   if(!key) throw new Error('OpenAI API-nyckel saknas. Lägg in den i Inställningar först.');
+  if(!imageDataUrl?.startsWith('data:image/')) throw new Error('Ingen giltig bild skickades.');
+  if(!prompt?.trim()) throw new Error('Skriv vad du vill ändra i bilden.');
+
   const body={
-    model:'gpt-5.6-luna',
+    model:'gpt-image-2',
     input:[{role:'user',content:[
-      {type:'input_text',text:prompt},
+      {type:'input_text',text:prompt.trim()},
       {type:'input_image',image_url:imageDataUrl,detail:'high'}
     ]}],
     tools:[{type:'image_generation',action:'edit',output_format:'png',quality:'auto',size:'auto'}]
   };
-  const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok) throw new Error(await r.text());
-  const d=await r.json();
+  const r=await fetch('https://api.openai.com/v1/responses',{
+    method:'POST',
+    headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const raw=await r.text();
+  if(!r.ok){
+    try{const e=JSON.parse(raw);throw new Error(e?.error?.message||`OpenAI-fel (${r.status})`)}
+    catch(e){throw new Error(e.message||`OpenAI-fel (${r.status})`)}
+  }
+  const d=JSON.parse(raw);
   const call=(d.output||[]).find(x=>x.type==='image_generation_call' && x.result);
   if(!call) throw new Error('OpenAI returnerade ingen redigerad bild.');
   return `data:image/png;base64,${call.result}`;
