@@ -1,17 +1,39 @@
-name: Build
+name: Build and Release
 
 on:
   push:
     branches: [main]
+    tags: ['v*.*.*']
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  web-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+          cache: npm
+      - run: npm install
       - run: npm run build
+
+  desktop-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install
+      - run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
