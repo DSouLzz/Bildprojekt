@@ -1,6 +1,6 @@
 {
   "name":"mitt-bild-projekt",
-  "version":"0.3.0",
+  "version":"0.4.0",
   "description":"Mitt bild projekt - AI-bildeditor",
   "main":"electron/main.cjs",
   "private":true,
@@ -10,7 +10,8 @@
     "build":"vite build",
     "preview":"vite preview",
     "desktop":"electron .",
-    "dist":"npm run build && electron-builder"
+    "dist":"npm run build && electron-builder",
+    "release":"npm run build && electron-builder --publish onTag"
   },
   "dependencies":{
     "lucide-react":"^0.468.0",
@@ -31,7 +32,7 @@
     "files":["dist/**/*","electron/**/*","package.json"],
     "publish":[{"provider":"github","owner":"DSouLzz","repo":"Bildprojekt","releaseType":"release"}],
     "win":{"target":["nsis"],"artifactName":"Mitt-bild-projekt-Setup-${version}.${ext}"},
-    "mac":{"target":["dmg"]},
+    "mac":{"target":["dmg","zip"]},
     "linux":{"target":["AppImage"]}
   }
 }
