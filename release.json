@@ -1,0 +1,7 @@
+{
+  "version":"0.2.0",
+  "name":"Mitt bild projekt v0.2.0",
+  "repo":"DSouLzz/Bildprojekt",
+  "updateEndpoint":"https://api.github.com/repos/DSouLzz/Bildprojekt/releases/latest",
+  "notes":["Klipp/kopiera markerat område","Klistra in som lager","Flytta/rotera lager","Ångra/gör om","Nyheter vid start"]
+}
